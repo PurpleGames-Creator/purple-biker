@@ -859,7 +859,7 @@
       renderRanking({ top: deduped, self }, range);
     } catch (e) {
       console.error('load ranking failed', e);
-      rankListEl.innerHTML = '<li class="rank-item error">ランキング取得に失敗しました。再試行してください。</li>';
+      if (rankListEl) rankListEl.innerHTML = '<li class="rank-item error">ランキング取得に失敗しました。再試行してください。</li>';
     }
   }
 
@@ -1035,17 +1035,17 @@
     // プレイヤーの初期Y座標を最初の地面ブロックに合わせて強制設定
     playerY = terrain[0].y - PLAYER_HEIGHT;
 
-    scoreEl.style.display = 'block';
-    startScreen.style.display = 'none';
-    gameOverScreen.style.display = 'none';
+    if (scoreEl) scoreEl.style.display = 'block';
+    if (startScreen) startScreen.style.display = 'none';
+    if (gameOverScreen) gameOverScreen.style.display = 'none';
     hasShownGameOver = false;
   }
 
   function resetToTitle() {
     state = 'start';
-    scoreEl.style.display = 'none';
-    startScreen.style.display = 'flex';
-    gameOverScreen.style.display = 'none';
+    if (scoreEl) scoreEl.style.display = 'none';
+    if (startScreen) startScreen.style.display = 'flex';
+    if (gameOverScreen) gameOverScreen.style.display = 'none';
     hasShownGameOver = false;
     if (rankListEl) rankListEl.innerHTML = '';
     if (playerRankInfoEl) playerRankInfoEl.textContent = '';
@@ -1344,16 +1344,22 @@
     requestAnimationFrame(gameLoop);
   }
 
-  document.getElementById('startBtn').addEventListener('click', function() {
-    initAudioContext();
-    if (audioCtx && !jumpBuffer && !jumpBufferLoading) {
-      loadJumpSoundBuffer();
-    }
-    startGameWithTransition();
-  });
-  document.getElementById('retryBtn').addEventListener('click', function() {
-    initGame();
-  });
+  const startBtnEl = document.getElementById('startBtn');
+  if (startBtnEl) {
+    startBtnEl.addEventListener('click', function() {
+      initAudioContext();
+      if (audioCtx && !jumpBuffer && !jumpBufferLoading) {
+        loadJumpSoundBuffer();
+      }
+      startGameWithTransition();
+    });
+  }
+  const retryBtnEl = document.getElementById('retryBtn');
+  if (retryBtnEl) {
+    retryBtnEl.addEventListener('click', function() {
+      initGame();
+    });
+  }
   if (backToTitleBtn) {
     backToTitleBtn.addEventListener('click', function() {
       resetToTitle();
@@ -1439,7 +1445,8 @@
   document.addEventListener('gesturechange', preventGameGestures);
   document.addEventListener('gestureend', preventGameGestures);
   document.addEventListener('contextmenu', preventGameGestures);
-git add .
+
+  // ↓ ここにあった git add . を消しました
   requestAnimationFrame(gameLoop);
 })();
   </script>
