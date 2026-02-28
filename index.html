@@ -12,9 +12,10 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: 100%;
-      height: 100%;
-      overflow: hidden;
-      touch-action: none;
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      touch-action: pan-y;
       user-select: none;
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -87,6 +88,33 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    body.start-screen #uiOverlay {
+      position: relative;
+      top: auto; left: auto; right: auto; bottom: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+    }
+    body.start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    body.start-screen #gameContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      width: 100%;
+    }
+    body.start-screen #gameCanvas {
+      display: none !important;
     }
     #uiOverlay > * { pointer-events: auto; }
     #scoreDisplay {
@@ -100,11 +128,24 @@
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);
       letter-spacing: 0.05em;
     }
-    #startScreen, #gameOverScreen {
+    #startScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      max-width: 100%;
+      padding: 40px 20px;
+      text-align: center;
+      background: radial-gradient(circle at top, rgba(90, 52, 170, 0.85), rgba(8, 8, 18, 0.96));
+      border-radius: 8px;
+    }
+    #gameOverScreen {
       position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -113,13 +154,13 @@
       padding: 24px;
       text-align: center;
     }
-    #gameOverScreen { display: none; }
     #startScreen h1 {
       font-family: 'Orbitron', system-ui, sans-serif;
       text-transform: uppercase;
       letter-spacing: 0.22em;
       color: #fdfbff;
       font-size: clamp(24px, 5vw, 44px);
+      margin-top: 20px;
       margin-bottom: 14px;
       text-shadow:
         0 0 8px rgba(216, 145, 255, 0.9),
@@ -186,7 +227,7 @@
     }
     #startCharacter {
       width: min(48vw, 260px);
-      max-height: 40vh;
+      max-height: 25vh;
       object-fit: contain;
       image-rendering: auto;
       margin-bottom: 18px;
@@ -281,7 +322,8 @@
     }
 
     #rankingContainer {
-      margin-top: 18px;
+      margin-top: 24px;
+      margin-bottom: 24px;
       width: 100%;
       max-width: 380px;
       padding: 10px 12px 4px;
@@ -321,8 +363,7 @@
       width: 100%;
       text-align: left;
       font-size: clamp(11px, 2.8vw, 13px);
-      max-height: 350px;
-      overflow-y: auto;
+      overflow-y: visible;
       padding-right: 5px;
       touch-action: pan-y !important;
       -webkit-overflow-scrolling: touch;
@@ -538,7 +579,7 @@
   <!-- Supabase JavaScript SDK（CDN / UMD ビルド） -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
-<body>
+<body class="start-screen">
   <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="450"></canvas>
     <div id="uiOverlay">
@@ -1037,6 +1078,7 @@
     // プレイヤーの初期Y座標を最初の地面ブロックに合わせて強制設定
     playerY = terrain[0].y - PLAYER_HEIGHT;
 
+    document.body.classList.remove('start-screen');
     if (scoreEl) scoreEl.style.display = 'block';
     if (startScreen) startScreen.style.display = 'none';
     if (gameOverScreen) gameOverScreen.style.display = 'none';
@@ -1045,6 +1087,7 @@
 
   function resetToTitle() {
     state = 'start';
+    document.body.classList.add('start-screen');
     if (scoreEl) scoreEl.style.display = 'none';
     if (startScreen) startScreen.style.display = 'flex';
     if (gameOverScreen) gameOverScreen.style.display = 'none';
@@ -1433,16 +1476,13 @@
     }
   });
 
-  // スマホでのズーム・スクロール・長押しメニューを無効化（ゲーム領域のみ）
+  // 開始画面ではスクロール可能に。ゲーム実行中のみ gesture/contextmenu を抑制
   function preventGameGestures(e) {
+    if (e.type === 'touchmove') return;
+    if (state !== 'playing') return;
     const target = e.target;
-    // ランキングリスト内、またはスクロールが必要なUI要素なら、ガードを適用せずに終了する
-    if (target && target.closest && (target.closest('.rank-list') || target.closest('.rank-tab'))) {
-      return;
-    }
-    if (target && target.closest && target.closest('#gameContainer')) {
-      e.preventDefault();
-    }
+    if (target && target.closest && (target.closest('.rank-list') || target.closest('.rank-tab'))) return;
+    if (target && target.closest && target.closest('#gameContainer')) e.preventDefault();
   }
   document.addEventListener('touchmove', preventGameGestures, { passive: false });
   document.addEventListener('gesturestart', preventGameGestures);
