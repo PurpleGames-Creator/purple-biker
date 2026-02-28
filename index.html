@@ -10,12 +10,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html:has(body.start-screen) {
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
     html, body {
       width: 100%;
       min-height: 100vh;
       height: 100vh;
       overflow-x: hidden;
       overflow-y: auto;
+      overscroll-behavior: none;
       touch-action: pan-y;
       user-select: none;
       -webkit-user-select: none;
@@ -34,6 +40,7 @@
       height: 100vh;
       min-height: 100vh;
       overflow: hidden;
+      overscroll-behavior: none;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
@@ -1498,12 +1505,18 @@
   // 開始画面ではスクロール可能に。ゲーム実行中のみ gesture/contextmenu を抑制
   function preventGameGestures(e) {
     const target = e.target;
-    if (target && target.closest && (target.closest('.rank-list') || target.closest('.rank-tab'))) {
-      e.stopPropagation();
+    // 1. ランキングリスト内での操作なら、ブラウザに任せる（ここで終了）
+    if (target && target.closest && target.closest('.rank-list')) {
       return;
     }
-    if (e.type === 'touchmove') return;
+    // 2. それ以外の場所（背景など）でのスワイプ操作は、即座に「禁止」する
+    if (e.type === 'touchmove') {
+      e.preventDefault();
+      return;
+    }
+    // 3. その他（ジェスチャーや右クリック抑制）の処理
     if (state !== 'playing') return;
+    if (target && target.closest && target.closest('.rank-tab')) return;
     if (target && target.closest && target.closest('#gameContainer')) e.preventDefault();
   }
   document.addEventListener('touchmove', preventGameGestures, { passive: false });
