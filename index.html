@@ -31,8 +31,9 @@
       color: #f5f0ff;
     }
     body.start-screen {
-      height: auto;
+      height: 100vh;
       min-height: 100vh;
+      overflow: hidden;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
@@ -336,7 +337,7 @@
       width: 100%;
       max-width: 380px;
       flex: 1;
-      min-height: min(250px, 30vh);
+      min-height: min(280px, 35vh);
       max-height: min(320px, 38vh);
       overflow: hidden;
       padding: 10px 12px 4px;
@@ -376,9 +377,9 @@
       width: 100%;
       text-align: left;
       font-size: clamp(11px, 2.8vw, 13px);
-      height: min(250px, 30vh);
-      min-height: min(250px, 30vh);
-      max-height: min(250px, 30vh);
+      height: min(300px, 35vh);
+      min-height: min(300px, 35vh);
+      max-height: min(300px, 35vh);
       overflow-y: auto;
       touch-action: pan-y !important;
       -webkit-overflow-scrolling: touch;
@@ -1496,10 +1497,13 @@
 
   // 開始画面ではスクロール可能に。ゲーム実行中のみ gesture/contextmenu を抑制
   function preventGameGestures(e) {
+    const target = e.target;
+    if (target && target.closest && (target.closest('.rank-list') || target.closest('.rank-tab'))) {
+      e.stopPropagation();
+      return;
+    }
     if (e.type === 'touchmove') return;
     if (state !== 'playing') return;
-    const target = e.target;
-    if (target && target.closest && (target.closest('.rank-list') || target.closest('.rank-tab'))) return;
     if (target && target.closest && target.closest('#gameContainer')) e.preventDefault();
   }
   document.addEventListener('touchmove', preventGameGestures, { passive: false });
