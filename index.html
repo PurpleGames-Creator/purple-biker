@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🟣Purple Biker🟣 - エンドレスラン</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      background: radial-gradient(circle at top, #3a0ca3 0%, #1a1a2e 45%, #05010a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #f5f0ff;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at top, rgba(186, 104, 255, 0.22) 0, transparent 55%),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(120, 80, 255, 0.4) 0,
+          rgba(120, 80, 255, 0.4) 1px,
+          transparent 1px,
+          transparent 28px
+        ),
+        repeating-linear-gradient(
+          to right,
+          rgba(120, 80, 255, 0.4) 0,
+          rgba(120, 80, 255, 0.4) 1px,
+          transparent 1px,
+          transparent 28px
+        );
+      opacity: 0.3;
+      transform-origin: bottom center;
+      transform: perspective(700px) rotateX(65deg) translateY(40px);
+      animation: gridScroll 18s linear infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+    #gameContainer {
+      position: relative;
+      max-width: 100vw;
+      max-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      user-select: none;
+    }
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      max-height: 100vh;
+      aspect-ratio: 800 / 450;
+      touch-action: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      background: #16213e;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    #uiOverlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #uiOverlay > * { pointer-events: auto; }
+    #scoreDisplay {
+      position: absolute;
+      top: min(12px, 3vh);
+      left: 50%;
+      transform: translateX(-50%);
+      color: #e94560;
+      font-size: clamp(18px, 4.8vw, 32px);
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      letter-spacing: 0.05em;
+    }
+    #startScreen, #gameOverScreen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(90, 52, 170, 0.85), rgba(8, 8, 18, 0.96));
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+    }
+    #gameOverScreen { display: none; }
+    #startScreen h1 {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: #fdfbff;
+      font-size: clamp(24px, 5vw, 44px);
+      margin-bottom: 14px;
+      text-shadow:
+        0 0 8px rgba(216, 145, 255, 0.9),
+        0 0 18px rgba(174, 83, 255, 0.9),
+        0 0 42px rgba(139, 62, 255, 0.8);
+      animation: neonFlicker 2.6s ease-in-out infinite alternate;
+      white-space: nowrap;
+    }
+    .sub {
+      color: #b8b9ff;
+      font-size: clamp(12px, 2.4vw, 14px);
+      margin-bottom: 26px;
+      opacity: 0.9;
+    }
+    .nickname-field {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+    .nickname-label {
+      font-size: 13px;
+      color: #d8d5ff;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+    #nicknameInput {
+      width: min(70vw, 260px);
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(214, 178, 255, 0.9);
+      background: rgba(8, 4, 24, 0.9);
+      color: #fdfbff;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      box-shadow:
+        0 0 0 1px rgba(86, 60, 180, 0.9),
+        0 0 16px rgba(157, 117, 255, 0.5);
+    }
+    #nicknameInput::placeholder {
+      color: rgba(184, 185, 230, 0.7);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    #nicknameInput:focus {
+      border-color: rgba(244, 214, 255, 1);
+      box-shadow:
+        0 0 0 1px rgba(222, 182, 255, 0.95),
+        0 0 24px rgba(215, 165, 255, 0.9);
+    }
+    .nickname-error {
+      min-height: 1.2em;
+      font-size: 11px;
+      color: #ff9ca6;
+    }
+    .start-hint {
+      margin-top: 16px;
+      font-size: clamp(10px, 2.4vw, 12px);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(187, 189, 255, 0.9);
+    }
+    #startCharacter {
+      width: min(48vw, 260px);
+      max-height: 40vh;
+      object-fit: contain;
+      image-rendering: auto;
+      margin-bottom: 18px;
+      animation: bikeJitter 0.09s infinite steps(2, end);
+      filter: drop-shadow(0 0 14px rgba(206, 149, 255, 0.9));
+      transform-origin: center bottom;
+    }
+    .btn {
+      padding: 14px 40px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fdfbff;
+      background: radial-gradient(circle at top, rgba(142, 76, 255, 0.5), rgba(36, 18, 54, 0.9));
+      border-radius: 999px;
+      border: 1px solid rgba(214, 178, 255, 0.8);
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px rgba(129, 93, 255, 0.7),
+        0 10px 24px rgba(10, 0, 40, 0.85),
+        0 0 28px rgba(209, 134, 255, 0.7);
+      transition: transform 0.14s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out;
+      touch-action: manipulation;
+    }
+    .btn:hover {
+      transform: translateY(-1px) scale(1.05);
+      box-shadow:
+        0 0 0 1px rgba(222, 182, 255, 0.95),
+        0 16px 36px rgba(10, 0, 40, 0.95),
+        0 0 40px rgba(235, 175, 255, 1);
+      border-color: rgba(244, 214, 255, 1);
+    }
+    .btn:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow:
+        0 0 0 1px rgba(184, 135, 255, 0.8),
+        0 6px 18px rgba(10, 0, 40, 0.9),
+        0 0 20px rgba(209, 134, 255, 0.7);
+    }
+    .btn + .btn {
+      margin-top: 10px;
+    }
+    #gameOverTitle {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      color: #fdfbff;
+      font-size: clamp(30px, 6vw, 46px);
+      margin-bottom: 10px;
+      text-shadow:
+        0 0 10px rgba(216, 145, 255, 0.9),
+        0 0 24px rgba(174, 83, 255, 0.9),
+        0 0 52px rgba(139, 62, 255, 0.85);
+      animation: neonFlicker 2.2s ease-in-out infinite alternate;
+    }
+    #finalScoreLabel {
+      margin-top: 4px;
+      margin-bottom: 6px;
+      font-size: clamp(12px, 2.8vw, 14px);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(188, 181, 255, 0.9);
+    }
+    #finalScore {
+      color: #ffb4c9;
+      font-size: clamp(26px, 6vw, 40px);
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-shadow: 0 0 14px rgba(255, 120, 180, 0.9);
+    }
+    #finalScore span { font-size: 18px; color: #ffd6e5; font-weight: 400; }
+    #bestScore {
+      color: #ffe5ff;
+      font-size: clamp(18px, 4.5vw, 24px);
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(200, 150, 255, 0.8);
+    }
+    #newRecordLabel {
+      margin-top: 4px;
+      margin-bottom: 18px;
+      font-size: clamp(16px, 4.5vw, 22px);
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #ffdcff;
+      text-shadow:
+        0 0 10px rgba(245, 105, 255, 0.9),
+        0 0 24px rgba(227, 60, 255, 0.9),
+        0 0 46px rgba(190, 36, 255, 0.85);
+      animation: newRecordPulse 1.5s ease-in-out infinite alternate;
+      display: none;
+    }
+
+    #rankingContainer {
+      margin-top: 18px;
+      width: 100%;
+      max-width: 380px;
+      padding: 10px 12px 4px;
+      border-radius: 12px;
+      background: radial-gradient(circle at top, rgba(54, 36, 110, 0.95), rgba(4, 0, 18, 0.95));
+      box-shadow:
+        0 0 0 1px rgba(142, 99, 255, 0.7),
+        0 12px 26px rgba(0, 0, 0, 0.7);
+    }
+    .rank-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .rank-tab {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(170, 140, 255, 0.8);
+      background: rgba(12, 8, 40, 0.8);
+      color: #d9d2ff;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .rank-tab.active {
+      background: linear-gradient(135deg, #e94560, #9b5bff);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(222, 152, 255, 0.9);
+    }
+    .rank-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      text-align: left;
+      font-size: clamp(11px, 2.8vw, 13px);
+      max-height: 350px;
+      overflow-y: auto;
+      padding-right: 5px;
+      scrollbar-width: thin;
+      scrollbar-color: #9b5bff rgba(10, 4, 40, 0.9);
+    }
+    .rank-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .rank-list::-webkit-scrollbar-track {
+      background: rgba(10, 4, 40, 0.85);
+      border-radius: 999px;
+    }
+    .rank-list::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #e94560, #9b5bff);
+      border-radius: 999px;
+    }
+    .rank-list::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #ff6b8b, #b787ff);
+    }
+    .rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 10px;
+      margin-bottom: 4px;
+      border-radius: 6px;
+      background: rgba(10, 4, 36, 0.9);
+      box-shadow: 0 0 0 1px rgba(107, 81, 210, 0.7);
+    }
+    .rank-item.rank-top1 {
+      font-size: 1.4em;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+    .rank-item.rank-top2 {
+      font-size: 1.25em;
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+    .rank-item.rank-top3 {
+      font-size: 1.12em;
+    }
+    .rank-item.loading,
+    .rank-item.error {
+      justify-content: center;
+      color: #c5b8ff;
+      opacity: 0.85;
+    }
+    .rank-pos {
+      min-width: 3em;
+      text-align: center;
+      color: #f4b5ff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .rank-medal {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 1.1em;
+    }
+    .rank-name {
+      flex: 1;
+      color: #fdfbff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .rank-score {
+      min-width: 4.5em;
+      text-align: right;
+      color: #ffcfdf;
+    }
+    .player-rank-info {
+      margin-top: 6px;
+      font-size: clamp(11px, 2.8vw, 13px);
+      color: #c6b6ff;
+      text-align: center;
+    }
+
+    #fadeOverlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 0%, rgba(255,255,255,0.9) 0, rgba(180,120,255,0.95) 24%, rgba(10,0,32,0.98) 80%);
+      opacity: 0;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    #fadeOverlay.fade-start {
+      animation: startFlash 0.55s ease-in-out forwards;
+    }
+
+    @keyframes startFlash {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes neonFlicker {
+      0% {
+        text-shadow:
+          0 0 8px rgba(216, 145, 255, 0.8),
+          0 0 22px rgba(174, 83, 255, 0.8),
+          0 0 40px rgba(139, 62, 255, 0.7);
+        opacity: 0.96;
+      }
+      8% {
+        text-shadow:
+          0 0 4px rgba(216, 145, 255, 0.3),
+          0 0 10px rgba(174, 83, 255, 0.3),
+          0 0 20px rgba(139, 62, 255, 0.3);
+        opacity: 0.72;
+      }
+      10% {
+        text-shadow:
+          0 0 12px rgba(242, 210, 255, 1),
+          0 0 28px rgba(210, 125, 255, 1),
+          0 0 52px rgba(163, 81, 255, 1);
+        opacity: 1;
+      }
+      28% {
+        text-shadow:
+          0 0 8px rgba(216, 145, 255, 0.85),
+          0 0 20px rgba(174, 83, 255, 0.9),
+          0 0 46px rgba(139, 62, 255, 0.8);
+        opacity: 0.98;
+      }
+      30% {
+        text-shadow:
+          0 0 2px rgba(216, 145, 255, 0.3),
+          0 0 8px rgba(174, 83, 255, 0.3),
+          0 0 14px rgba(139, 62, 255, 0.3);
+        opacity: 0.84;
+      }
+      32% {
+        text-shadow:
+          0 0 14px rgba(242, 210, 255, 1),
+          0 0 34px rgba(210, 125, 255, 1),
+          0 0 60px rgba(163, 81, 255, 1);
+        opacity: 1;
+      }
+      100% {
+        text-shadow:
+          0 0 10px rgba(216, 145, 255, 0.9),
+          0 0 26px rgba(174, 83, 255, 0.9),
+          0 0 54px rgba(139, 62, 255, 0.85);
+        opacity: 0.97;
+      }
+    }
+
+    @keyframes bikeJitter {
+      0%   { transform: translateY(0px); }
+      20%  { transform: translateY(-1px); }
+      40%  { transform: translateY(1px); }
+      60%  { transform: translateY(-2px); }
+      80%  { transform: translateY(1px); }
+      100% { transform: translateY(0px); }
+    }
+
+    @keyframes gridScroll {
+      0% {
+        background-position:
+          0 0,
+          0 0,
+          0 0;
+      }
+      100% {
+        background-position:
+          0 0,
+          0 260px,
+          260px 0;
+      }
+    }
+    @keyframes newRecordPulse {
+      0% {
+        opacity: 0.85;
+        text-shadow:
+          0 0 6px rgba(245, 105, 255, 0.7),
+          0 0 18px rgba(227, 60, 255, 0.7),
+          0 0 32px rgba(190, 36, 255, 0.7);
+        transform: translateY(0px) scale(1);
+      }
+      35% {
+        opacity: 1;
+        text-shadow:
+          0 0 12px rgba(255, 180, 255, 1),
+          0 0 32px rgba(246, 109, 255, 1),
+          0 0 60px rgba(207, 62, 255, 1);
+        transform: translateY(-1px) scale(1.03);
+      }
+      50% {
+        opacity: 0.9;
+        text-shadow:
+          0 0 4px rgba(245, 105, 255, 0.6),
+          0 0 14px rgba(227, 60, 255, 0.6),
+          0 0 26px rgba(190, 36, 255, 0.6);
+        transform: translateY(0px) scale(0.99);
+      }
+      100% {
+        opacity: 1;
+        text-shadow:
+          0 0 10px rgba(245, 105, 255, 0.9),
+          0 0 26px rgba(227, 60, 255, 0.9),
+          0 0 46px rgba(190, 36, 255, 0.85);
+        transform: translateY(-0.5px) scale(1.02);
+      }
+    }
+  </style>
+  <!-- Supabase JavaScript SDK（CDN / UMD ビルド） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    <div id="uiOverlay">
+      <div id="fadeOverlay"></div>
+      <div id="scoreDisplay">0 m</div>
+      <div id="startScreen">
+        <h1>🟣Purple Biker🟣</h1>
+        <img id="startCharacter" src="透過済.png" alt="Purple Biker">
+        <div class="nickname-field">
+          <p class="nickname-label">ニックネームを入力してください</p>
+          <input id="nicknameInput" type="text" maxlength="16" autocomplete="off" inputmode="text" placeholder="例：むらさき太郎">
+          <div id="nicknameError" class="nickname-error"></div>
+        </div>
+        <button class="btn" id="startBtn">START GAME</button>
+        <p class="start-hint">PRESS SPACE OR TAP TO START</p>
+        <div id="rankingContainer">
+          <div class="rank-tabs">
+            <button class="rank-tab active" data-rank-range="today">TODAY</button>
+            <button class="rank-tab" data-rank-range="week">WEEK</button>
+            <button class="rank-tab" data-rank-range="all">ALL TIME</button>
+          </div>
+          <ul id="rankList" class="rank-list"></ul>
+          <div id="playerRankInfo" class="player-rank-info"></div>
+        </div>
+      </div>
+      <div id="gameOverScreen">
+        <h1 id="gameOverTitle">GAME OVER</h1>
+        <p id="finalScoreLabel">SCORE</p>
+        <p id="finalScore">0 <span>m</span></p>
+        <p id="bestScore">BEST: 0 <span>m</span></p>
+        <p id="newRecordLabel">NEW RECORD!</p>
+        <button class="btn" id="retryBtn">もう一度走る</button>
+        <button class="btn btn-secondary" id="backToTitleBtn">トップへ戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function() {
+  'use strict';
+
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const CW = 800, CH = 450;
+
+  // ゲーム状態
+  let state = 'start'; // start | playing | gameover
+  let scrollSpeed = 0;
+  const BASE_SPEED = 6;
+  const MAX_SPEED = 14;
+  const SPEED_INCREASE_PER_M = 0.008;
+  let distance = 0;
+  let lastTime = 0;
+  let hasShownGameOver = false;
+
+  // プレイヤー（画面左寄り固定の見た目 = ワールドでは右に進むので、地形を左に流す）
+  const PLAYER_WORLD_X = 120;  // キャンバス上での見た目のX（固定）
+  const PLAYER_WIDTH = 60;   // バイクに合わせて横長の当たり判定
+  const PLAYER_HEIGHT = 40;
+  const PLAYER_DRAW_OFFSET_X = 0;  // 描画位置の微調整（地面との見た目合わせ）
+  const PLAYER_DRAW_OFFSET_Y = 0;
+  let playerY = 0;
+  let velY = 0;
+  const GRAVITY = 0.65;
+  const JUMP_POWER = -11.5;
+  const DOUBLE_JUMP_POWER = -9.5;
+  let onGround = false;
+  let canDoubleJump = false;
+  let usedDoubleJump = false;
+
+  // キャラクター画像（透過済.png）
+  const playerImage = new Image();
+  let playerImgLoaded = false;
+  playerImage.onload = function() { playerImgLoaded = true; };
+  playerImage.src = '透過済.png';
+
+  // 入力管理（スペース押しっぱなし対策）
+  let spaceHeld = false;
+
+  // 効果音（Web Audio API）
+  let audioCtx = null;
+  let audioReady = false;
+  let distortionCurve = null;
+  let bestScore = 0;
+  let jumpBuffer = null;
+  let jumpBufferLoading = false;
+
+  // Supabase クライアント
+  let supabaseClient = null;
+
+  // 背景用エレメント（星空・街のシルエット）
+  let stars = [];
+  let cityBlocks = [];
+
+  function initSupabase() {
+    if (supabaseClient || !window.supabase) return;
+
+    // Supabase プロジェクト設定
+    // Netlify 等の環境変数を使う場合の例:
+    // const supabaseUrl = 'https://hefayilffszrczxhnpii.supabase.co' || import.meta.env.VITE_SUPABASE_URL;
+    // const supabaseKey = 'sb_publishable_w1O4J9Cg9I0LWjoFpb5_pg_uDxUHnOd' || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    // TODO: ご自身の Supabase プロジェクトの URL と anon 公開鍵に書き換えてください
+    const supabaseUrl = 'https://hefayilffszrczxhnpii.supabase.co';
+    const supabaseKey = 'sb_publishable_w1O4J9Cg9I0LWjoFpb5_pg_uDxUHnOd';
+
+    try {
+      supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    } catch (e) {
+      console.error('Supabase 初期化に失敗しました', e);
+      supabaseClient = null;
+    }
+  }
+
+  function initAudioContext() {
+    if (!window.AudioContext && !window.webkitAudioContext) return;
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    audioReady = true;
+  }
+
+  async function loadJumpSoundBuffer() {
+    if (!audioCtx || jumpBufferLoading || jumpBuffer) return;
+    jumpBufferLoading = true;
+    try {
+      // プロジェクトフォルダ内の「jump.mp3」をジャンプSEとして使用
+      const response = await fetch('jump.mp3');
+      if (!response.ok) throw new Error('HTTP ' + response.status + ' while loading jump sound jump.mp3');
+      const arrayBuf = await response.arrayBuffer();
+      const decoded = await audioCtx.decodeAudioData(arrayBuf);
+      jumpBuffer = decoded;
+    } catch (e) {
+      console.error('ジャンプSE(jump.mp3)の読み込みに失敗しました', e);
+    } finally {
+      jumpBufferLoading = false;
+    }
+  }
+
+  function playJumpSound() {
+    if (!audioCtx || !audioReady) {
+      console.error('ジャンプSE再生時に AudioContext が初期化されていません');
+      return;
+    }
+    const ctx = audioCtx;
+
+    // 事前デコード済みの jump.mp3 があればそれを再生
+    if (jumpBuffer) {
+      const src = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      src.buffer = jumpBuffer;
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.9, ctx.currentTime);
+      src.start(ctx.currentTime);
+      return;
+    }
+
+    // バッファがまだ存在しない場合
+    console.error('ジャンプSE(jump.mp3)のAudioBufferが未準備のため、音を再生できませんでした');
+  }
+
+  function playLandSound() {
+    if (!audioCtx || !audioReady) return;
+    const ctx = audioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(12, ctx.currentTime + 0.16);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(600, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.16);
+
+    gain.gain.setValueAtTime(0.0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+  }
+
+  function playHitSound() {
+    if (!audioCtx || !audioReady) return;
+    const ctx = audioCtx;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    // 低音で重みのある「ドカッ！」系
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.22);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(700, now);
+    filter.frequency.exponentialRampToValueAtTime(180, now + 0.22);
+
+    gain.gain.setValueAtTime(0.0, now);
+    gain.gain.linearRampToValueAtTime(0.85, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.35);
+  }
+
+  async function saveScoreToSupabase(name, score) {
+    initSupabase();
+    if (!supabaseClient) return;
+    const payload = { nickname: name, score };
+    // created_at は Supabase 側で now() デフォルトを設定しておく想定（biker_scores テーブル）
+    const { error } = await supabaseClient.from('biker_scores').insert(payload);
+    if (error) throw error;
+  }
+
+  async function submitScoreAndLoadRanking() {
+    if (!rankListEl) return;
+    const score = Math.floor(distance);
+    const name = currentNickname || (nicknameInput ? nicknameInput.value.trim() : '') || 'NONAME';
+    lastSubmittedScore = score;
+    lastSubmittedNickname = name;
+
+    try {
+      await saveScoreToSupabase(name, score);
+    } catch (e) {
+      console.error('Supabase へのスコア保存に失敗しました', e);
+    }
+
+    // デフォルトは今日のランキングを表示
+    loadRanking('today');
+  }
+
+  async function loadRanking(range) {
+    currentRankRange = range;
+    if (!rankListEl) return;
+    rankListEl.innerHTML = '<li class="rank-item loading">Loading...</li>';
+    if (playerRankInfoEl) playerRankInfoEl.textContent = '';
+
+    initSupabase();
+    if (!supabaseClient) {
+      rankListEl.innerHTML = '<li class="rank-item error">ランキングが利用できません。再試行してください。</li>';
+      return;
+    }
+
+    const now = new Date();
+    let fromDate = null;
+
+    if (range === 'today') {
+      const d = new Date(now);
+      d.setHours(0, 0, 0, 0);
+      fromDate = d;
+    } else if (range === 'week') {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 6); // 直近7日間（今日を含む）
+      d.setHours(0, 0, 0, 0);
+      fromDate = d;
+    }
+
+    try {
+      // 上位 10 件の取得（biker_scores テーブル）
+      let baseQuery = supabaseClient
+        .from('biker_scores')
+        .select('id,nickname,score,created_at', { count: 'exact' });
+
+      if (fromDate) {
+        baseQuery = baseQuery.gte('created_at', fromDate.toISOString());
+      }
+
+      const { data: rows, error } = await baseQuery
+        .order('score', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      // 自分の順位を取得（自分のスコアより大きい件数 + 1）
+      let self = null;
+      if (lastSubmittedNickname && lastSubmittedScore > 0) {
+        let rankQuery = supabaseClient
+          .from('biker_scores')
+          .select('id', { count: 'exact', head: true })
+          .gt('score', lastSubmittedScore);
+
+        if (fromDate) {
+          rankQuery = rankQuery.gte('created_at', fromDate.toISOString());
+        }
+
+        const { count: higherCount, error: rankError } = await rankQuery;
+        if (!rankError && typeof higherCount === 'number') {
+          self = {
+            rank: higherCount + 1,
+            nickname: lastSubmittedNickname,
+            score: lastSubmittedScore
+          };
+        }
+      }
+
+      renderRanking({ top: rows || [], self }, range);
+    } catch (e) {
+      console.error('load ranking failed', e);
+      rankListEl.innerHTML = '<li class="rank-item error">ランキング取得に失敗しました。再試行してください。</li>';
+    }
+  }
+
+  function renderRanking(data, range) {
+    if (!rankListEl) return;
+    const top = data && (data.top || data.rows || data.list || []);
+    const self = data && (data.self || null);
+
+    rankListEl.innerHTML = '';
+
+    // 同じニックネームのプレイヤーは、自己ベスト（最高スコア）の1件だけに集約
+    const bestByName = new Map();
+    (top || []).forEach((entry) => {
+      const nicknameKey = entry.nickname || entry.name || 'UNKNOWN';
+      const scoreVal = typeof entry.score === 'number' ? entry.score : (entry.value || 0);
+      const existing = bestByName.get(nicknameKey);
+      if (!existing || scoreVal > (typeof existing.score === 'number' ? existing.score : (existing.value || 0))) {
+        bestByName.set(nicknameKey, entry);
+      }
+    });
+
+    const deduped = Array.from(bestByName.values());
+    deduped.sort((a, b) => {
+      const sa = typeof a.score === 'number' ? a.score : (a.value || 0);
+      const sb = typeof b.score === 'number' ? b.score : (b.value || 0);
+      return sb - sa;
+    });
+
+    let lastScore = null;
+    let lastRank = 0;
+    let shownCount = 0;
+
+    deduped.slice(0, 100).forEach((entry, index) => {
+      const li = document.createElement('li');
+      li.className = 'rank-item';
+      const score = typeof entry.score === 'number' ? entry.score : (entry.value || 0);
+
+      let displayRank;
+      if (lastScore === null) {
+        // 最初の行
+        displayRank = 1;
+      } else if (score === lastScore) {
+        // 同スコアは同じ順位（タイ）
+        displayRank = lastRank;
+      } else {
+        // 異なるスコアは「これまでに表示した件数 + 1」位
+        displayRank = shownCount + 1;
+      }
+      lastScore = score;
+      lastRank = displayRank;
+      shownCount += 1;
+
+      const nickname = entry.nickname || entry.name || 'UNKNOWN';
+
+      // 上位3位は行全体を大きくするためのクラスを付与
+      if (displayRank === 1) li.classList.add('rank-top1');
+      else if (displayRank === 2) li.classList.add('rank-top2');
+      else if (displayRank === 3) li.classList.add('rank-top3');
+
+      let rankContent = '';
+      if (displayRank === 1) rankContent = '<span class="rank-medal">🥇</span>';
+      else if (displayRank === 2) rankContent = '<span class="rank-medal">🥈</span>';
+      else if (displayRank === 3) rankContent = '<span class="rank-medal">🥉</span>';
+      else rankContent = '#' + displayRank;
+
+      li.innerHTML =
+        '<span class="rank-pos">' + rankContent + '</span>' +
+        '<span class="rank-name">' + nickname + '</span>' +
+        '<span class="rank-score">' + score + ' m</span>';
+      rankListEl.appendChild(li);
+    });
+
+    if (playerRankInfoEl) {
+      if (self && self.rank) {
+        const sName = self.nickname || self.name || lastSubmittedNickname;
+        const sScore = typeof self.score === 'number' ? self.score : (self.value || lastSubmittedScore);
+        playerRankInfoEl.textContent =
+          sName + ' の順位: ' + self.rank + ' 位 / ' + sScore + ' m';
+      } else if (lastSubmittedNickname) {
+        playerRankInfoEl.textContent =
+          lastSubmittedNickname + ' の記録: ' + lastSubmittedScore + ' m';
+      }
+    }
+
+    if (rankTabs && rankTabs.length) {
+      rankTabs.forEach(btn => {
+        const r = btn.getAttribute('data-rank-range') || '';
+        btn.classList.toggle('active', r === range);
+      });
+    }
+  }
+
+  // 地形ブロック { x, y, w, h } ワールド座標（x は左端）
+  let terrain = [];
+  let worldOffset = 0;  // 地形を左にずらす量（増えるとスクロール）
+
+  const GROUND_Y_BASE = CH - 80;
+  const BLOCK_HEIGHT = 60;
+  const MIN_BLOCK_WIDTH = 80;
+  const MAX_BLOCK_WIDTH = 220;
+  const MIN_GAP = 90;   // プレイヤー幅(60)より十分広い隙間を必ず生成
+  const MAX_GAP = 200;
+  const MAX_STEP = 80;
+  const MIN_STEP_HEIGHT = 24;   // 視認できる段差の最小高さ
+  const MAX_STEP_UP = 60;       // 上方向の最大段差（ジャンプで届く範囲）
+  const MAX_STEP_DOWN = 80;     // 下方向の最大段差
+  let nextGenX = 0;
+
+  const scoreEl = document.getElementById('scoreDisplay');
+  const startScreen = document.getElementById('startScreen');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const bestScoreEl = document.getElementById('bestScore');
+  const newRecordLabelEl = document.getElementById('newRecordLabel');
+  const fadeOverlay = document.getElementById('fadeOverlay');
+  const backToTitleBtn = document.getElementById('backToTitleBtn');
+  const nicknameInput = document.getElementById('nicknameInput');
+  const nicknameError = document.getElementById('nicknameError');
+  const rankTabs = document.querySelectorAll('.rank-tab[data-rank-range]');
+  const rankListEl = document.getElementById('rankList');
+  const playerRankInfoEl = document.getElementById('playerRankInfo');
+
+  let currentNickname = '';
+  let lastSubmittedScore = 0;
+  let lastSubmittedNickname = '';
+  let currentRankRange = 'today';
+
+  function getGroundY() {
+    return GROUND_Y_BASE;
+  }
+
+  function loadNickname() {
+    if (!nicknameInput) return;
+    const saved = localStorage.getItem('pb_nickname') || '';
+    nicknameInput.value = saved;
+    currentNickname = saved.trim();
+  }
+
+  function loadBestScore() {
+    try {
+      const raw = localStorage.getItem('pb_best_score');
+      const v = raw ? parseInt(raw, 10) : 0;
+      if (!Number.isNaN(v) && v > 0) {
+        bestScore = v;
+        if (bestScoreEl) bestScoreEl.innerHTML = 'BEST: ' + bestScore + ' <span>m</span>';
+      }
+    } catch (e) {
+      bestScore = 0;
+    }
+  }
+
+  function updateBestScoreIfNeeded(current) {
+    const score = Math.floor(current);
+    if (score <= 0) return false;
+    let isNewRecord = false;
+    if (score > bestScore) {
+      bestScore = score;
+      try {
+        localStorage.setItem('pb_best_score', String(bestScore));
+      } catch (e) {
+        // ignore
+      }
+      isNewRecord = true;
+    }
+    if (bestScoreEl) bestScoreEl.innerHTML = 'BEST: ' + bestScore + ' <span>m</span>';
+    return isNewRecord;
+  }
+
+  function initGame() {
+    state = 'playing';
+    scrollSpeed = BASE_SPEED;
+    distance = 0;
+    worldOffset = 0;
+    terrain = [];
+    nextGenX = 0;
+    velY = 0;
+    onGround = true;
+    canDoubleJump = false;
+    usedDoubleJump = false;
+    // 初期地面をプレイヤー位置から十分右側まで敷く
+    const startGroundW = 600;
+    const groundY = getGroundY();
+    terrain.push({
+      x: 0,
+      y: groundY,
+      w: startGroundW,
+      h: CH - groundY
+    });
+    nextGenX = startGroundW;
+    // プレイヤーの初期Y座標を最初の地面ブロックに合わせて強制設定
+    playerY = terrain[0].y - PLAYER_HEIGHT;
+
+    scoreEl.style.display = 'block';
+    startScreen.style.display = 'none';
+    gameOverScreen.style.display = 'none';
+    hasShownGameOver = false;
+  }
+
+  function resetToTitle() {
+    state = 'start';
+    scoreEl.style.display = 'none';
+    startScreen.style.display = 'flex';
+    gameOverScreen.style.display = 'none';
+    hasShownGameOver = false;
+    if (rankListEl) rankListEl.innerHTML = '';
+    if (playerRankInfoEl) playerRankInfoEl.textContent = '';
+    loadRanking(currentRankRange || 'today');
+  }
+
+  function startGameWithTransition() {
+    if (state !== 'start') return;
+    // 音声ポリシー対策: ゲーム開始時にも確実にAudioContextを初期化し、ジャンプSEを読み込む
+    initAudioContext();
+    if (audioCtx && !jumpBuffer && !jumpBufferLoading) {
+      loadJumpSoundBuffer();
+    }
+    if (nicknameInput) {
+      const name = nicknameInput.value.trim();
+      if (!name) {
+        if (nicknameError) nicknameError.textContent = 'ニックネームを入力してください';
+        nicknameInput.focus();
+        return;
+      }
+      currentNickname = name;
+      try {
+        localStorage.setItem('pb_nickname', name);
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (!fadeOverlay) {
+      initGame();
+      return;
+    }
+    // アニメーションをリスタートするためにクラスをリセット
+    fadeOverlay.classList.remove('fade-start');
+    // 再描画を強制してアニメーションをリプレイ
+    void fadeOverlay.offsetWidth; // eslint-disable-line no-unused-expressions
+    const handleEnd = () => {
+      fadeOverlay.removeEventListener('animationend', handleEnd);
+      initGame();
+    };
+    fadeOverlay.addEventListener('animationend', handleEnd);
+    fadeOverlay.classList.add('fade-start');
+  }
+
+  function generateTerrain() {
+    const rightEdge = worldOffset + CW + 150;
+    while (nextGenX < rightEdge) {
+      const roll = Math.random();
+      const last = terrain.length > 0 ? terrain[terrain.length - 1] : null;
+      const lastRight = last ? last.x + last.w : 0;
+      const startX = nextGenX;
+      // 穴（ギャップ）: ブロックを追加せず次へ
+      if (roll < 0.22 && last) {
+        // 現在のスクロール速度に比例した、安全な最大幅を計算（2段ジャンプで必ず越えられる範囲に制限）
+        const maxSafeGap = scrollSpeed * 10.5; // 例: 速度6→最大63px, 速度14→最大147px
+        const gapMax = Math.max(MIN_GAP, Math.min(MAX_GAP, maxSafeGap));
+        const gapW = MIN_GAP + Math.random() * (gapMax - MIN_GAP);
+        nextGenX = startX + gapW;
+        continue;
+      }
+      // 段差（高い壁 or 低い谷）
+      if (roll < 0.5 && last) {
+        let step = (Math.random() - 0.5) * 2 * MAX_STEP;
+        const absStep = Math.abs(step);
+        // ほとんど平坦な数ピクセル段差は廃止
+        if (absStep < MIN_STEP_HEIGHT) {
+          step = 0;
+        } else {
+          // 上方向の理不尽な段差・下方向の急な落差を制限
+          if (step < -MAX_STEP_UP) step = -MAX_STEP_UP;
+          if (step > MAX_STEP_DOWN) step = MAX_STEP_DOWN;
+        }
+        const blockW = MIN_BLOCK_WIDTH + Math.random() * (MAX_BLOCK_WIDTH - MIN_BLOCK_WIDTH);
+        const topY = last.y + step;
+        const actualY = Math.max(80, Math.min(CH - BLOCK_HEIGHT, topY));
+        terrain.push({
+          x: startX,
+          y: actualY,
+          w: blockW,
+          h: CH - actualY
+        });
+        nextGenX = startX + blockW;
+        continue;
+      }
+      // 平坦
+      const blockW = MIN_BLOCK_WIDTH + Math.random() * (MAX_BLOCK_WIDTH - MIN_BLOCK_WIDTH);
+      const y = last ? last.y : getGroundY();
+      terrain.push({
+        x: startX,
+        y: y,
+        w: blockW,
+        h: CH - y
+      });
+      nextGenX = startX + blockW;
+    }
+  }
+
+  function removeOffscreenTerrain() {
+    const leftEdge = worldOffset - 50;
+    terrain = terrain.filter(b => b.x + b.w > leftEdge);
+  }
+
+  function jump() {
+    let didJump = false;
+    if (onGround) {
+      velY = JUMP_POWER;
+      onGround = false;
+      canDoubleJump = true;
+      usedDoubleJump = false;
+      didJump = true;
+    } else if (canDoubleJump && !usedDoubleJump) {
+      velY = DOUBLE_JUMP_POWER;
+      usedDoubleJump = true;
+      didJump = true;
+    }
+    if (didJump) {
+      initAudioContext();
+      playJumpSound();
+    }
+  }
+
+  function updatePlayer(dt) {
+    const wasGroundedBefore = onGround;
+    let landedThisFrame = false;
+
+    // 重力適用
+    velY += GRAVITY * (dt / 16);
+    playerY += velY;
+    onGround = false;
+
+    const playerLeft = PLAYER_WORLD_X - PLAYER_WIDTH / 2;
+    const playerRight = PLAYER_WORLD_X + PLAYER_WIDTH / 2; // 前輪（車体右端）
+    const playerFeetY = playerY + PLAYER_HEIGHT;
+    const rearX = PLAYER_WORLD_X - 20;                     // 後輪付近
+    const LAND_MARGIN = 10;                                // 着地とみなす高さの猶予
+
+    for (const block of terrain) {
+      const blockScreenLeft = block.x - worldOffset;
+      const blockScreenRight = block.x + block.w - worldOffset;
+      const blockTop = block.y;
+
+      // 1. 正面から高い壁にぶつかったか（最優先でチェック）
+      const frontOverLeftEdge = playerRight > blockScreenLeft + 15; // 15px 以上めり込んだら衝突扱い
+      const centerStillLeftOfWall = PLAYER_WORLD_X < blockScreenLeft;
+      const feetDeepBelowTop = playerFeetY > blockTop + 8; // 段差許容：8pxより深く沈んだら壁
+
+      if (frontOverLeftEdge && centerStillLeftOfWall && feetDeepBelowTop) {
+        // 着地可能な高さではなく、高い壁に前輪がぶつかった → 即ゲームオーバー
+        if (state === 'playing') {
+          initAudioContext();
+          playHitSound();
+        }
+        state = 'gameover';
+        return;
+      }
+
+      // 2. 着地判定（前輪または後輪がブロック上にある & 足元が地面に近い）
+      const overByRear = rearX >= blockScreenLeft - 5 && rearX <= blockScreenRight + 5;
+      const overByFront = playerRight >= blockScreenLeft - 5 && playerRight <= blockScreenRight + 5;
+
+      if (velY >= 0 && (overByRear || overByFront)) {
+        // 段差許容：足元がブロック天面から±LAND_MARGIN以内なら「乗り上げ（着地）」として扱う
+        if (playerFeetY >= blockTop - LAND_MARGIN && playerFeetY <= blockTop + LAND_MARGIN) {
+          playerY = blockTop - PLAYER_HEIGHT;
+          velY = 0;
+          if (!onGround) {
+            onGround = true;
+            canDoubleJump = true;
+            usedDoubleJump = false;
+            if (!wasGroundedBefore && !landedThisFrame && state === 'playing') {
+              initAudioContext();
+              playLandSound();
+              landedThisFrame = true;
+            }
+          } else {
+            onGround = true;
+            canDoubleJump = true;
+            usedDoubleJump = false;
+          }
+        }
+      }
+    }
+
+    // 3. 落下死（穴に落ちる）：プレイヤーが画面下端から完全に消えたらゲームオーバー（CH + 150）
+    if (playerY > CH + 150) {
+      if (state === 'playing') {
+        initAudioContext();
+        playHitSound();
+      }
+      state = 'gameover';
+    }
+  }
+
+  function update(dt) {
+    if (state !== 'playing') return;
+    scrollSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance * SPEED_INCREASE_PER_M);
+    worldOffset += scrollSpeed;
+    distance += scrollSpeed * (dt / 1000) * 3;
+    generateTerrain();
+    removeOffscreenTerrain();
+    updatePlayer(dt);
+  }
+
+  function draw() {
+    // 背景グラデーション（夜空）
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, CH);
+    skyGrad.addColorStop(0, '#050818');
+    skyGrad.addColorStop(0.4, '#111b3b');
+    skyGrad.addColorStop(0.75, '#2a1550');
+    skyGrad.addColorStop(1, '#020008');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, CW, CH);
+
+    // 星を初期化
+    if (!stars.length) {
+      for (let i = 0; i < 80; i++) {
+        stars.push({
+          x: Math.random() * CW,
+          y: Math.random() * (GROUND_Y_BASE - 80),
+          r: Math.random() * 1.3 + 0.3,
+          parallax: 0.4 + Math.random() * 0.8
+        });
+      }
+    }
+    // 星の描画（ゆっくりパララックス）
+    ctx.fillStyle = '#d9e6ff';
+    for (const s of stars) {
+      const offsetX = (s.x - worldOffset * 0.08 * s.parallax) % CW;
+      const sx = offsetX < 0 ? offsetX + CW : offsetX;
+      ctx.beginPath();
+      ctx.arc(sx, s.y, s.r, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.5 + 0.4 * Math.sin((worldOffset * 0.002 + s.x) * 0.3);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // 地面ブロック（縦線なしのネオン縁取り）
+    for (const block of terrain) {
+      const sx = block.x - worldOffset;
+      if (sx + block.w < 0) continue;
+      ctx.fillStyle = '#06051b';
+      ctx.fillRect(sx, block.y, block.w, block.h);
+      // ネオンの水平ラインだけ描画
+      ctx.strokeStyle = '#9b5bff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sx, block.y + 0.5);
+      ctx.lineTo(sx + block.w, block.y + 0.5);
+      ctx.stroke();
+    }
+
+    // プレイヤー（画像 or フォールバック）
+    const px = PLAYER_WORLD_X;
+    const drawX = px - PLAYER_WIDTH / 2 + PLAYER_DRAW_OFFSET_X;
+    const drawY = playerY + PLAYER_DRAW_OFFSET_Y;
+    if (playerImgLoaded) {
+      ctx.drawImage(playerImage, drawX, drawY, PLAYER_WIDTH, PLAYER_HEIGHT);
+    } else {
+      ctx.fillStyle = '#e94560';
+      ctx.strokeStyle = '#ff6b6b';
+      ctx.lineWidth = 2;
+      ctx.fillRect(drawX, drawY, PLAYER_WIDTH, PLAYER_HEIGHT);
+      ctx.strokeRect(drawX, drawY, PLAYER_WIDTH, PLAYER_HEIGHT);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('BIKE', drawX + PLAYER_WIDTH / 2 - 18, drawY + PLAYER_HEIGHT / 2 + 4);
+    }
+
+    if (state === 'playing') {
+      scoreEl.textContent = Math.floor(distance) + ' m';
+    }
+
+    if (state === 'gameover') {
+      scoreEl.style.display = 'none';
+      gameOverScreen.style.display = 'flex';
+      const shownScore = Math.floor(distance);
+      finalScoreEl.innerHTML = shownScore + ' <span>m</span>';
+      if (!hasShownGameOver) {
+        hasShownGameOver = true;
+        const isNewRecord = updateBestScoreIfNeeded(shownScore);
+        if (newRecordLabelEl) {
+          newRecordLabelEl.style.display = isNewRecord ? 'block' : 'none';
+        }
+        submitScoreAndLoadRanking();
+      }
+    } else {
+      hasShownGameOver = false;
+      if (newRecordLabelEl) newRecordLabelEl.style.display = 'none';
+    }
+  }
+
+  function gameLoop(t) {
+    const dt = Math.min(t - lastTime, 50);
+    lastTime = t;
+    update(dt);
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  document.getElementById('startBtn').addEventListener('click', function() {
+    initAudioContext();
+    if (audioCtx && !jumpBuffer && !jumpBufferLoading) {
+      loadJumpSoundBuffer();
+    }
+    startGameWithTransition();
+  });
+  document.getElementById('retryBtn').addEventListener('click', function() {
+    initGame();
+  });
+  if (backToTitleBtn) {
+    backToTitleBtn.addEventListener('click', function() {
+      resetToTitle();
+    });
+  }
+
+  // ニックネーム入力 初期化
+  if (nicknameInput) {
+    loadNickname();
+    nicknameInput.addEventListener('input', function() {
+      currentNickname = nicknameInput.value.trim();
+      if (nicknameError) nicknameError.textContent = '';
+    });
+  }
+
+  if (rankTabs && rankTabs.length) {
+    rankTabs.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const range = btn.getAttribute('data-rank-range') || 'today';
+        loadRanking(range);
+      });
+    });
+  }
+
+  loadBestScore();
+  // 初回表示時にランキングを読み込む
+  loadRanking(currentRankRange || 'today');
+
+  function isUiElement(target) {
+    if (!target || !target.closest) return false;
+    return !!target.closest('button, a, input, textarea, select, label, .rank-tab');
+  }
+
+  function handlePrimaryDown(e) {
+    const target = e.target;
+    if (isUiElement(target)) return;
+    if (e.type === 'touchstart') {
+      e.preventDefault();
+    }
+    if (state === 'start') {
+      startGameWithTransition();
+    } else if (state === 'playing') {
+      jump();
+    }
+  }
+
+  document.addEventListener('touchstart', handlePrimaryDown, { passive: false });
+  document.addEventListener('mousedown', handlePrimaryDown);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') {
+      if (spaceHeld) return;         // 押しっぱなし中は無視
+      spaceHeld = true;
+      e.preventDefault();
+      if (state === 'start') {
+        startGameWithTransition();
+      } else if (state === 'playing') {
+        jump();
+      }
+      return;
+    }
+    if (e.code === 'KeyR' && state === 'gameover') {
+      e.preventDefault();
+      initGame();
+    }
+  });
+
+  document.addEventListener('keyup', function(e) {
+    if (e.code === 'Space') {
+      spaceHeld = false;
+    }
+  });
+
+  // スマホでのズーム・スクロール・長押しメニューを無効化（ゲーム領域のみ）
+  function preventGameGestures(e) {
+    const target = e.target;
+    if (target && target.closest && target.closest('#gameContainer')) {
+      e.preventDefault();
+    }
+  }
+  document.addEventListener('touchmove', preventGameGestures, { passive: false });
+  document.addEventListener('gesturestart', preventGameGestures);
+  document.addEventListener('gesturechange', preventGameGestures);
+  document.addEventListener('gestureend', preventGameGestures);
+  document.addEventListener('contextmenu', preventGameGestures);
+
+  requestAnimationFrame(gameLoop);
+})();
+  </script>
+</body>
+</html>
