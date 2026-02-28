@@ -345,7 +345,7 @@
       max-width: 380px;
       flex: 1;
       min-height: min(280px, 35vh);
-      max-height: min(320px, 38vh);
+      max-height: 60vh;
       overflow: hidden;
       padding: 10px 12px 4px;
       border-radius: 12px;
@@ -379,14 +379,14 @@
     }
     .rank-list {
       list-style: none;
-      padding: 0 5px 60px 0;
+      padding: 0 5px 80px 0;
       margin: 0;
       width: 100%;
       text-align: left;
       font-size: clamp(11px, 2.8vw, 13px);
-      height: min(300px, 35vh);
-      min-height: min(300px, 35vh);
-      max-height: min(300px, 35vh);
+      height: 100%;
+      min-height: 0;
+      max-height: 100%;
       overflow-y: auto;
       touch-action: pan-y !important;
       -webkit-overflow-scrolling: touch;
@@ -939,13 +939,18 @@
     const deduped = data && (data.top || data.rows || data.list || []);
     const self = data && (data.self || null);
 
+    const toRender = deduped.slice(0, 100);
+    if (typeof console !== 'undefined' && console.log) {
+      console.log('[renderRanking] deduped.length=', deduped.length, 'rendering items=', toRender.length);
+    }
+
     rankListEl.innerHTML = '';
 
     let lastScore = null;
     let lastRank = 0;
     let shownCount = 0;
 
-    deduped.slice(0, 100).forEach((entry, index) => {
+    toRender.forEach((entry, index) => {
       const li = document.createElement('li');
       li.className = 'rank-item';
       const score = typeof entry.score === 'number' ? entry.score : (entry.value || 0);
@@ -1169,9 +1174,10 @@
       const lastRight = last ? last.x + last.w : 0;
       const startX = nextGenX;
       // 穴（ギャップ）: ブロックを追加せず次へ（2000m超で出現確率を段階的にアップ）
+      // 基本22%。3000m超で32%に上げ、中盤以降のリズムを維持
       let gapThreshold = 0.22;
-      if (distance > 5000) {
-        gapThreshold = 0.30;
+      if (distance > 3000) {
+        gapThreshold = 0.32;
       } else if (distance > 2000) {
         gapThreshold = 0.28;
       }
@@ -1342,25 +1348,39 @@
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, CW, CH);
 
-    // 星を初期化
+    // 星を初期化（満天の星空：全体を高密度に、特に上部を密集させる）
+    const skyHeight = GROUND_Y_BASE - 80;
     if (!stars.length) {
-      for (let i = 0; i < 80; i++) {
+      // ベースの星（画面全体に均等）
+      for (let i = 0; i < 220; i++) {
         stars.push({
-          x: Math.random() * CW,
-          y: Math.random() * (GROUND_Y_BASE - 80),
-          r: Math.random() * 1.3 + 0.3,
-          parallax: 0.4 + Math.random() * 0.8
+          x: Math.random() * CW * 1.2,
+          y: Math.random() * skyHeight,
+          r: Math.random() * 1.2 + 0.25,
+          parallax: 0.3 + Math.random() * 0.9
+        });
+      }
+      // 上部エリア専用の高密度クラスター（スコア上の空白域を埋める）
+      const topZoneHeight = skyHeight * 0.45;
+      for (let i = 0; i < 280; i++) {
+        stars.push({
+          x: Math.random() * CW * 1.5,
+          y: Math.random() * topZoneHeight,
+          r: Math.random() * 1.0 + 0.2,
+          parallax: 0.2 + Math.random() * 0.6
         });
       }
     }
-    // 星の描画（ゆっくりパララックス）
-    ctx.fillStyle = '#d9e6ff';
+    // 星の描画（ゆっくりパララックス・ピクセル風）
+    ctx.fillStyle = '#e8eeff';
     for (const s of stars) {
-      const offsetX = (s.x - worldOffset * 0.08 * s.parallax) % CW;
+      const offsetX = (s.x - worldOffset * 0.08 * s.parallax) % (CW * 1.5);
       const sx = offsetX < 0 ? offsetX + CW : offsetX;
+      if (sx >= CW) continue;
       ctx.beginPath();
       ctx.arc(sx, s.y, s.r, 0, Math.PI * 2);
-      ctx.globalAlpha = 0.5 + 0.4 * Math.sin((worldOffset * 0.002 + s.x) * 0.3);
+      const baseAlpha = 0.55 + 0.35 * Math.sin((worldOffset * 0.002 + s.x) * 0.3);
+      ctx.globalAlpha = Math.min(1, baseAlpha + 0.15);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
