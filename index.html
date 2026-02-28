@@ -1013,7 +1013,7 @@
   const MIN_BLOCK_WIDTH = 80;
   const MAX_BLOCK_WIDTH = 220;
   const MIN_GAP = 90;   // プレイヤー幅(60)より十分広い隙間を必ず生成
-  const MAX_GAP = 200;
+  const MAX_GAP = 160;
   const MAX_STEP = 80;
   const MIN_STEP_HEIGHT = 24;   // 視認できる段差の最小高さ
   const MAX_STEP_UP = 60;       // 上方向の最大段差（ジャンプで届く範囲）
@@ -1169,9 +1169,15 @@
       const startX = nextGenX;
       // 穴（ギャップ）: ブロックを追加せず次へ
       if (roll < 0.22 && last) {
-        // 現在のスクロール速度に比例した、安全な最大幅を計算（2段ジャンプで必ず越えられる範囲に制限）
-        const maxSafeGap = scrollSpeed * 10.5; // 例: 速度6→最大63px, 速度14→最大147px
-        const gapMax = Math.max(MIN_GAP, Math.min(MAX_GAP, maxSafeGap));
+        // 現在のスクロール速度に比例した、安全な最大幅（二段ジャンプで余裕を持って届く範囲に制限）
+        const maxSafeGap = scrollSpeed * 8.0;
+        let gapMax = Math.max(MIN_GAP, Math.min(MAX_GAP, maxSafeGap));
+        // 穴の後のブロックが前より高い場合（上り坂）は、飛距離が落ちるため gapMax を 20% 短くする
+        const nextIsStep = Math.random();
+        if (nextIsStep < 0.5) {
+          const stepVal = (Math.random() - 0.5) * 2 * MAX_STEP;
+          if (stepVal < -MIN_STEP_HEIGHT) gapMax = Math.max(MIN_GAP, gapMax * 0.8);
+        }
         const gapW = MIN_GAP + Math.random() * (gapMax - MIN_GAP);
         nextGenX = startX + gapW;
         continue;
