@@ -19,6 +19,7 @@
       width: 100%;
       min-height: 100vh;
       height: 100vh;
+      min-width: 100vw;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: none;
@@ -29,12 +30,20 @@
       -ms-user-select: none;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
-      background: radial-gradient(circle at top, #3a0ca3 0%, #1a1a2e 45%, #05010a 100%);
+      background: radial-gradient(ellipse at top, #3a0ca3 0%, #1a1a2e 45%, #05010a 100%);
+      background-size: 100vw 100vh;
+      background-position: center;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Segoe UI', system-ui, sans-serif;
       color: #f5f0ff;
+    }
+    body:not(.start-screen) {
+      background: radial-gradient(ellipse at top center, #050818 0%, #0d1530 35%, #1a1b3b 65%, #020008 100%);
+      background-size: 100vw 100vh;
+      background-position: center;
+      background-repeat: no-repeat;
     }
     body.start-screen {
       height: 100vh;
@@ -106,7 +115,7 @@
       touch-action: none;
       user-select: none;
       -webkit-touch-callout: none;
-      background: #16213e;
+      background: transparent !important;
       border-radius: 8px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
@@ -1421,54 +1430,11 @@
     } else if (bgCtx && bgCanvasWidth && bgCanvasHeight) {
       bgCtx.clearRect(0, 0, bgCanvasWidth, bgCanvasHeight);
     }
-    // 地面より下は純黒の奈落（プレイヤーが落ちる深淵を強調）
+    // Canvas の空部分は透明（外側の全画面星空が透けて1つの空に）
+    ctx.clearRect(0, 0, CW, CH);
+    // 地面より下だけ純黒の奈落（プレイヤーが落ちる深淵を強調）
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, GROUND_Y_BASE, CW, CH - GROUND_Y_BASE);
-    // 背景グラデーション（夜空）は地面の高さまで
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y_BASE);
-    skyGrad.addColorStop(0, '#050818');
-    skyGrad.addColorStop(0.4, '#111b3b');
-    skyGrad.addColorStop(0.75, '#2a1550');
-    skyGrad.addColorStop(1, '#020008');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, CW, GROUND_Y_BASE);
-
-    // 星を初期化（満天の星空：全体を高密度に、特に上部を密集させる）
-    const skyHeight = GROUND_Y_BASE - 80;
-    if (!stars.length) {
-      // ベースの星（画面全体に均等）
-      for (let i = 0; i < 220; i++) {
-        stars.push({
-          x: Math.random() * CW * 1.2,
-          y: Math.random() * skyHeight,
-          r: Math.random() * 1.2 + 0.25,
-          parallax: 0.3 + Math.random() * 0.9
-        });
-      }
-      // 上部エリア専用の高密度クラスター（スコア上の空白域を埋める）
-      const topZoneHeight = skyHeight * 0.45;
-      for (let i = 0; i < 280; i++) {
-        stars.push({
-          x: Math.random() * CW * 1.5,
-          y: Math.random() * topZoneHeight,
-          r: Math.random() * 1.0 + 0.2,
-          parallax: 0.2 + Math.random() * 0.6
-        });
-      }
-    }
-    // 星の描画（ゆっくりパララックス・ピクセル風）
-    ctx.fillStyle = '#e8eeff';
-    for (const s of stars) {
-      const offsetX = (s.x - worldOffset * 0.08 * s.parallax) % (CW * 1.5);
-      const sx = offsetX < 0 ? offsetX + CW : offsetX;
-      if (sx >= CW) continue;
-      ctx.beginPath();
-      ctx.arc(sx, s.y, s.r, 0, Math.PI * 2);
-      const baseAlpha = 0.55 + 0.35 * Math.sin((worldOffset * 0.002 + s.x) * 0.3);
-      ctx.globalAlpha = Math.min(1, baseAlpha + 0.15);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
 
     // 地面ブロック（縦線なしのネオン縁取り）
     for (const block of terrain) {
