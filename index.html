@@ -828,29 +828,35 @@
 
       if (error) throw error;
 
-      // 自分の順位を取得（自分のスコアより大きい件数 + 1）
+      // 表示用：同じニックネームは最高スコアの1件だけに集約（fetch と順位計算で完全に同じロジックにする）
+      const bestByName = new Map();
+      (rows || []).forEach((entry) => {
+        const nicknameKey = entry.nickname || entry.name || 'UNKNOWN';
+        const scoreVal = typeof entry.score === 'number' ? entry.score : (entry.value || 0);
+        const existing = bestByName.get(nicknameKey);
+        if (!existing || scoreVal > (typeof existing.score === 'number' ? existing.score : (existing.value || 0))) {
+          bestByName.set(nicknameKey, entry);
+        }
+      });
+      const deduped = Array.from(bestByName.values());
+      deduped.sort((a, b) => {
+        const sa = typeof a.score === 'number' ? a.score : (a.value || 0);
+        const sb = typeof b.score === 'number' ? b.score : (b.value || 0);
+        return sb - sa;
+      });
+
+      // 自分の順位は「表示用の重複排除リスト」内の位置と一致させる（表の行と下の順位表示が必ず一致）
       let self = null;
       if (lastSubmittedNickname && lastSubmittedScore > 0) {
-        let rankQuery = supabaseClient
-          .from('biker_scores')
-          .select('id', { count: 'exact', head: true })
-          .gt('score', lastSubmittedScore);
-
-        if (fromDate) {
-          rankQuery = rankQuery.gte('created_at', fromDate.toISOString());
-        }
-
-        const { count: higherCount, error: rankError } = await rankQuery;
-        if (!rankError && typeof higherCount === 'number') {
-          self = {
-            rank: higherCount + 1,
-            nickname: lastSubmittedNickname,
-            score: lastSubmittedScore
-          };
+        const idx = deduped.findIndex((e) => (e.nickname || e.name) === lastSubmittedNickname);
+        if (idx !== -1) {
+          const entry = deduped[idx];
+          const s = typeof entry.score === 'number' ? entry.score : (entry.value || 0);
+          self = { rank: idx + 1, nickname: lastSubmittedNickname, score: s };
         }
       }
 
-      renderRanking({ top: rows || [], self }, range);
+      renderRanking({ top: deduped, self }, range);
     } catch (e) {
       console.error('load ranking failed', e);
       rankListEl.innerHTML = '<li class="rank-item error">ランキング取得に失敗しました。再試行してください。</li>';
@@ -859,28 +865,11 @@
 
   function renderRanking(data, range) {
     if (!rankListEl) return;
-    const top = data && (data.top || data.rows || data.list || []);
+    // loadRanking から渡される top は重複排除・ソート済みのためそのまま使用
+    const deduped = data && (data.top || data.rows || data.list || []);
     const self = data && (data.self || null);
 
     rankListEl.innerHTML = '';
-
-    // 同じニックネームのプレイヤーは、自己ベスト（最高スコア）の1件だけに集約
-    const bestByName = new Map();
-    (top || []).forEach((entry) => {
-      const nicknameKey = entry.nickname || entry.name || 'UNKNOWN';
-      const scoreVal = typeof entry.score === 'number' ? entry.score : (entry.value || 0);
-      const existing = bestByName.get(nicknameKey);
-      if (!existing || scoreVal > (typeof existing.score === 'number' ? existing.score : (existing.value || 0))) {
-        bestByName.set(nicknameKey, entry);
-      }
-    });
-
-    const deduped = Array.from(bestByName.values());
-    deduped.sort((a, b) => {
-      const sa = typeof a.score === 'number' ? a.score : (a.value || 0);
-      const sb = typeof b.score === 'number' ? b.score : (b.value || 0);
-      return sb - sa;
-    });
 
     let lastScore = null;
     let lastRank = 0;
@@ -1450,7 +1439,7 @@
   document.addEventListener('gesturechange', preventGameGestures);
   document.addEventListener('gestureend', preventGameGestures);
   document.addEventListener('contextmenu', preventGameGestures);
-
+git add .
   requestAnimationFrame(gameLoop);
 })();
   </script>
