@@ -1167,8 +1167,14 @@
       const last = terrain.length > 0 ? terrain[terrain.length - 1] : null;
       const lastRight = last ? last.x + last.w : 0;
       const startX = nextGenX;
-      // 穴（ギャップ）: ブロックを追加せず次へ
-      if (roll < 0.22 && last) {
+      // 穴（ギャップ）: ブロックを追加せず次へ（2000m超で出現確率を段階的にアップ）
+      let gapThreshold = 0.22;
+      if (distance > 5000) {
+        gapThreshold = 0.30;
+      } else if (distance > 2000) {
+        gapThreshold = 0.28;
+      }
+      if (roll < gapThreshold && last) {
         // 現在のスクロール速度に比例した、安全な最大幅（二段ジャンプで余裕を持って届く範囲に制限）
         const maxSafeGap = scrollSpeed * 8.0;
         let gapMax = Math.max(MIN_GAP, Math.min(MAX_GAP, maxSafeGap));
