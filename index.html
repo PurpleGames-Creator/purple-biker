@@ -1371,12 +1371,12 @@
       bgStars = [];
     }
     if (!bgCtx) return;
+    const skyLine = h * 0.55;
     if (!bgStars.length) {
-      const topZone = h * 0.5;
       for (let i = 0; i < 180; i++) {
         bgStars.push({
           x: Math.random() * w * 1.3,
-          y: Math.random() * h,
+          y: Math.random() * skyLine,
           r: Math.random() * 1.2 + 0.2,
           parallax: 0.3 + Math.random() * 0.7
         });
@@ -1384,22 +1384,24 @@
       for (let i = 0; i < 220; i++) {
         bgStars.push({
           x: Math.random() * w * 1.5,
-          y: Math.random() * topZone,
+          y: Math.random() * (skyLine * 0.9),
           r: Math.random() * 1.0 + 0.15,
           parallax: 0.2 + Math.random() * 0.5
         });
       }
     }
-    const grad = bgCtx.createLinearGradient(0, 0, 0, h);
+    bgCtx.fillStyle = '#000000';
+    bgCtx.fillRect(0, skyLine, w, h - skyLine);
+    const grad = bgCtx.createLinearGradient(0, 0, 0, skyLine);
     grad.addColorStop(0, '#050818');
     grad.addColorStop(0.35, '#0d1530');
-    grad.addColorStop(0.6, '#1a1b3b');
-    grad.addColorStop(0.85, '#2a1550');
+    grad.addColorStop(0.7, '#1a1b3b');
     grad.addColorStop(1, '#020008');
     bgCtx.fillStyle = grad;
-    bgCtx.fillRect(0, 0, w, h);
+    bgCtx.fillRect(0, 0, w, skyLine);
     bgCtx.fillStyle = '#e8eeff';
     for (const s of bgStars) {
+      if (s.y >= skyLine) continue;
       const offsetX = (s.x - worldOffset * 0.06 * s.parallax) % (w * 1.5);
       const sx = offsetX < 0 ? offsetX + w : offsetX;
       if (sx >= w) continue;
@@ -1419,14 +1421,17 @@
     } else if (bgCtx && bgCanvasWidth && bgCanvasHeight) {
       bgCtx.clearRect(0, 0, bgCanvasWidth, bgCanvasHeight);
     }
-    // 背景グラデーション（夜空）
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, CH);
+    // 地面より下は純黒の奈落（プレイヤーが落ちる深淵を強調）
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, GROUND_Y_BASE, CW, CH - GROUND_Y_BASE);
+    // 背景グラデーション（夜空）は地面の高さまで
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y_BASE);
     skyGrad.addColorStop(0, '#050818');
     skyGrad.addColorStop(0.4, '#111b3b');
     skyGrad.addColorStop(0.75, '#2a1550');
     skyGrad.addColorStop(1, '#020008');
     ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillRect(0, 0, CW, GROUND_Y_BASE);
 
     // 星を初期化（満天の星空：全体を高密度に、特に上部を密集させる）
     const skyHeight = GROUND_Y_BASE - 80;
