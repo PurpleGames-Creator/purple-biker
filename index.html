@@ -923,11 +923,11 @@
 
       const { data: rows, error } = await baseQuery
         .order('score', { ascending: false })
-        .limit(100);
+        .limit(1000);
 
       if (error) throw error;
 
-      // 表示用：同じニックネームは最高スコアの1件だけに集約（fetch と順位計算で完全に同じロジックにする）
+      // 表示用：同じニックネームは最高スコアの1件だけに集約
       const bestByName = new Map();
       (rows || []).forEach((entry) => {
         const nicknameKey = entry.nickname || entry.name || 'UNKNOWN';
@@ -944,7 +944,7 @@
         return sb - sa;
       });
 
-      // 自分の順位は「表示用の重複排除リスト」内の位置と一致させる（表の行と下の順位表示が必ず一致）
+      // 自分の順位は重複排除後のリスト内の位置（上位100件に絞る前）
       let self = null;
       if (lastSubmittedNickname && lastSubmittedScore > 0) {
         const idx = deduped.findIndex((e) => (e.nickname || e.name) === lastSubmittedNickname);
@@ -955,7 +955,8 @@
         }
       }
 
-      renderRanking({ top: deduped, self }, range);
+      // 表示は上位100人に絞って渡す
+      renderRanking({ top: deduped.slice(0, 100), self }, range);
     } catch (e) {
       console.error('load ranking failed', e);
       if (rankListEl) rankListEl.innerHTML = '<li class="rank-item error">ランキング取得に失敗しました。再試行してください。</li>';
