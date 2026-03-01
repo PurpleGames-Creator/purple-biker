@@ -1386,19 +1386,19 @@
     const isDaytime = hour >= 6 && hour < 18;
     const skyLine = h * 0.55;
 
-    // 地面より下は昼夜共通で奈落（黒）
-    bgCtx.fillStyle = '#000000';
-    bgCtx.fillRect(0, skyLine, w, h - skyLine);
-
     if (isDaytime) {
-      // 昼: 青空グラデーション
-      const dayGrad = bgCtx.createLinearGradient(0, 0, 0, skyLine);
+      // 昼: 空〜地平〜遠景を1本のグラデーションで繋ぎ、硬い境界を出さない
+      const dayGrad = bgCtx.createLinearGradient(0, 0, 0, h);
       dayGrad.addColorStop(0, '#4A90E2');
-      dayGrad.addColorStop(0.4, '#6BB0F7');
-      dayGrad.addColorStop(0.8, '#87CEFA');
-      dayGrad.addColorStop(1, '#E0F6FF');
+      dayGrad.addColorStop(0.35, '#6BB0F7');
+      dayGrad.addColorStop(0.55, '#87CEFA');
+      dayGrad.addColorStop(0.62, '#C8E4E8');
+      dayGrad.addColorStop(0.7, '#7a9a6e');
+      dayGrad.addColorStop(0.82, '#4a5d3a');
+      dayGrad.addColorStop(0.92, '#2d3825');
+      dayGrad.addColorStop(1, '#1a2018');
       bgCtx.fillStyle = dayGrad;
-      bgCtx.fillRect(0, 0, w, skyLine);
+      bgCtx.fillRect(0, 0, w, h);
       // 太陽（右上寄り・パララックスでゆっくり動く）
       const sunX = w * 0.82 + (worldOffset * 0.02) % (w * 0.3);
       const sunY = h * 0.18;
@@ -1442,7 +1442,10 @@
         bgCtx.fill();
       }
     } else {
-      // 夜: 既存の星空
+      // 夜: 地面より下は奈落（黒）、その上に星空
+      bgCtx.fillStyle = '#000000';
+      bgCtx.fillRect(0, skyLine, w, h - skyLine);
+      // 既存の星空
       if (!bgStars.length) {
         for (let i = 0; i < 180; i++) {
           bgStars.push({
@@ -1491,31 +1494,89 @@
     } else if (bgCtx && bgCanvasWidth && bgCanvasHeight) {
       bgCtx.clearRect(0, 0, bgCanvasWidth, bgCanvasHeight);
     }
-    // Canvas の空部分は透明（外側の全画面星空が透けて1つの空に）
+    // Canvas の空部分は透明（外側の全画面背景が透けて1つの空に）
     ctx.clearRect(0, 0, CW, CH);
-    // 地面より下だけ純黒の奈落（プレイヤーが落ちる深淵を強調）
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, GROUND_Y_BASE, CW, CH - GROUND_Y_BASE);
+    const hour = new Date().getHours();
+    const isDaytime = hour >= 6 && hour < 18;
 
-    // 地面ブロック（縦線なしのネオン縁取り）
+    if (isDaytime) {
+      // 昼: 奈落は描かず、遠景のみ（空は外側の全画面グラデーションに任せる）
+      const horizonY = GROUND_Y_BASE - 40;
+      const hGrad = ctx.createLinearGradient(0, horizonY, 0, CH);
+      hGrad.addColorStop(0, 'rgba(122, 154, 110, 0.35)');
+      hGrad.addColorStop(0.2, 'rgba(74, 93, 58, 0.75)');
+      hGrad.addColorStop(0.5, '#4a5d3a');
+      hGrad.addColorStop(0.8, '#2d3825');
+      hGrad.addColorStop(1, '#1a2018');
+      ctx.fillStyle = hGrad;
+      ctx.fillRect(0, horizonY, CW, CH - horizonY);
+      // 遠景の山並み（なだらかな灰緑の連峰）
+      ctx.fillStyle = 'rgba(61, 74, 53, 0.9)';
+      ctx.beginPath();
+      ctx.moveTo(0, CH);
+      ctx.lineTo(0, GROUND_Y_BASE + 30);
+      ctx.lineTo(CW * 0.2, GROUND_Y_BASE - 20);
+      ctx.lineTo(CW * 0.45, GROUND_Y_BASE + 10);
+      ctx.lineTo(CW * 0.7, GROUND_Y_BASE - 35);
+      ctx.lineTo(CW * 1.1, GROUND_Y_BASE + 40);
+      ctx.lineTo(CW * 1.1, CH);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(53, 64, 42, 0.85)';
+      ctx.beginPath();
+      ctx.moveTo(0, CH);
+      ctx.lineTo(CW * 0.35, GROUND_Y_BASE);
+      ctx.lineTo(CW * 0.6, GROUND_Y_BASE - 25);
+      ctx.lineTo(CW * 0.9, GROUND_Y_BASE + 20);
+      ctx.lineTo(CW * 1.2, CH);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // 夜: 地面より下は純黒の奈落
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, GROUND_Y_BASE, CW, CH - GROUND_Y_BASE);
+    }
+
+    // 地面ブロック（昼はフラット道路＋紫ネオン縁、夜はネオン縁取り）
     for (const block of terrain) {
       const sx = block.x - worldOffset;
       if (sx + block.w < 0) continue;
-      ctx.fillStyle = '#06051b';
-      ctx.fillRect(sx, block.y, block.w, block.h);
-      // ネオンの水平ラインだけ描画
-      ctx.strokeStyle = '#9b5bff';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(sx, block.y + 0.5);
-      ctx.lineTo(sx + block.w, block.y + 0.5);
-      ctx.stroke();
+      const drawW = block.w + 1;
+      if (isDaytime) {
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(sx, block.y, drawW, block.h);
+        ctx.shadowColor = '#d891ff';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#9b5bff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(sx, block.y + 0.5);
+        ctx.lineTo(sx + drawW, block.y + 0.5);
+        ctx.stroke();
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.fillStyle = '#06051b';
+        ctx.fillRect(sx, block.y, drawW, block.h);
+        ctx.strokeStyle = '#9b5bff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(sx, block.y + 0.5);
+        ctx.lineTo(sx + drawW, block.y + 0.5);
+        ctx.stroke();
+      }
     }
 
     // プレイヤー（画像 or フォールバック）
     const px = PLAYER_WORLD_X;
     const drawX = px - PLAYER_WIDTH / 2 + PLAYER_DRAW_OFFSET_X;
     const drawY = playerY + PLAYER_DRAW_OFFSET_Y;
+    if (isDaytime) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+    }
     if (playerImgLoaded) {
       ctx.drawImage(playerImage, drawX, drawY, PLAYER_WIDTH, PLAYER_HEIGHT);
     } else {
@@ -1527,6 +1588,12 @@
       ctx.fillStyle = '#1a1a2e';
       ctx.font = '14px sans-serif';
       ctx.fillText('BIKE', drawX + PLAYER_WIDTH / 2 - 18, drawY + PLAYER_HEIGHT / 2 + 4);
+    }
+    if (isDaytime) {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     }
 
     if (state === 'playing') {
