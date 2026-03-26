@@ -111,7 +111,7 @@
       max-width: 800px;
       height: auto;
       max-height: 100vh;
-      aspect-ratio: 800 / 450;
+      aspect-ratio: 800 / 600;
       touch-action: none;
       user-select: none;
       -webkit-touch-callout: none;
@@ -632,7 +632,7 @@
 <body class="start-screen">
   <canvas id="bgStarsCanvas" aria-hidden="true"></canvas>
   <div id="gameContainer">
-    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="uiOverlay">
       <div id="fadeOverlay"></div>
       <div id="scoreDisplay">0 m</div>
@@ -673,7 +673,7 @@
 
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const CW = 800, CH = 450;
+  const CW = 800, CH = 600;
 
   // ゲーム状態
   let state = 'start'; // start | playing | gameover
@@ -1054,7 +1054,7 @@
   const MIN_STEP_HEIGHT = 24;   // 視認できる段差の最小高さ
   const MAX_STEP_UP = 60;       // 上方向の最大段差（ジャンプで届く範囲）
   const MAX_STEP_DOWN = 80;     // 下方向の最大段差
-  const MIN_TERRAIN_Y = 230;    // 高所+2段ジャンプでも上端で隠れないよう、天井側の余白を十分に確保
+  const MIN_TERRAIN_Y = 380;    // キャンバス高拡張分(150px)だけ下げ、従来の相対的な段差感を維持
   let nextGenX = 0;
 
   const scoreEl = document.getElementById('scoreDisplay');
