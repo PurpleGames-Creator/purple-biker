@@ -1054,7 +1054,7 @@
   const MIN_STEP_HEIGHT = 24;   // 視認できる段差の最小高さ
   const MAX_STEP_UP = 60;       // 上方向の最大段差（ジャンプで届く範囲）
   const MAX_STEP_DOWN = 80;     // 下方向の最大段差
-  const MIN_TERRAIN_Y = 120;    // 地形が上がり過ぎないよう上限を下げ、天井側の余白を確保
+  const MIN_TERRAIN_Y = 230;    // 高所+2段ジャンプでも上端で隠れないよう、天井側の余白を十分に確保
   let nextGenX = 0;
 
   const scoreEl = document.getElementById('scoreDisplay');
