@@ -1054,6 +1054,7 @@
   const MIN_STEP_HEIGHT = 24;   // 視認できる段差の最小高さ
   const MAX_STEP_UP = 60;       // 上方向の最大段差（ジャンプで届く範囲）
   const MAX_STEP_DOWN = 80;     // 下方向の最大段差
+  const MIN_TERRAIN_Y = 120;    // 地形が上がり過ぎないよう上限を下げ、天井側の余白を確保
   let nextGenX = 0;
 
   const scoreEl = document.getElementById('scoreDisplay');
@@ -1239,7 +1240,7 @@
         }
         const blockW = MIN_BLOCK_WIDTH + Math.random() * (MAX_BLOCK_WIDTH - MIN_BLOCK_WIDTH);
         const topY = last.y + step;
-        const actualY = Math.max(80, Math.min(CH - BLOCK_HEIGHT, topY));
+        const actualY = Math.max(MIN_TERRAIN_Y, Math.min(CH - BLOCK_HEIGHT, topY));
         terrain.push({
           x: startX,
           y: actualY,
