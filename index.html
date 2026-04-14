@@ -54,6 +54,32 @@
       align-items: center;
       justify-content: flex-start;
     }
+    .top-logo-link {
+      position: fixed;
+      top: max(6px, calc(env(safe-area-inset-top) + 2px));
+      left: max(8px, calc(env(safe-area-inset-left) + 4px));
+      z-index: 9999;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      text-decoration: none;
+    }
+    .top-logo-link img {
+      display: block;
+      width: clamp(84px, 22vw, 112px);
+      height: auto;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+    }
+    @media (min-width: 768px) {
+      .top-logo-link {
+        top: max(10px, calc(env(safe-area-inset-top) + 4px));
+        left: max(12px, calc(env(safe-area-inset-left) + 6px));
+      }
+      .top-logo-link img {
+        width: clamp(108px, 12vw, 140px);
+      }
+    }
 
     #bgStarsCanvas {
       position: fixed;
@@ -630,6 +656,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body class="start-screen">
+  <a class="top-logo-link" href="https://purple-park.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Purple Parkのサイトへ移動">
+    <img src="logo.png" alt="Purple Park ロゴ">
+  </a>
   <canvas id="bgStarsCanvas" aria-hidden="true"></canvas>
   <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="600"></canvas>
