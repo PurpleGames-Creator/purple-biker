@@ -745,6 +745,10 @@
   let bestScore = 0;
   let jumpBuffer = null;
   let jumpBufferLoading = false;
+  let bgmBuffer = null;
+  let bgmSource = null;
+  let bgmGain = null;
+  let bgmBufferLoading = false;
 
   // Supabase クライアント
   let supabaseClient = null;
@@ -829,6 +833,66 @@
 
     // バッファがまだ存在しない場合
     console.error('ジャンプSE(jump.mp3)のAudioBufferが未準備のため、音を再生できませんでした');
+  }
+
+  async function loadBGMBuffer() {
+    if (!audioCtx || bgmBufferLoading || bgmBuffer) return;
+    bgmBufferLoading = true;
+    try {
+      const response = await fetch('bgm.mp3');
+      if (!response.ok) throw new Error('HTTP ' + response.status + ' while loading BGM bgm.mp3');
+      const arrayBuf = await response.arrayBuffer();
+      const decoded = await audioCtx.decodeAudioData(arrayBuf);
+      bgmBuffer = decoded;
+      console.log('BGM(bgm.mp3)の読み込みが完了しました');
+      if (state === 'playing') {
+        playBGM();
+      }
+    } catch (e) {
+      console.error('BGM(bgm.mp3)の読み込みに失敗しました', e);
+    } finally {
+      bgmBufferLoading = false;
+    }
+  }
+
+  function playBGM() {
+    if (!audioCtx || !audioReady) {
+      console.error('BGM再生時に AudioContext が初期化されていません');
+      return;
+    }
+    if (!bgmBuffer) {
+      console.error('BGM(bgm.mp3)のAudioBufferが未準備です');
+      return;
+    }
+
+    // 既に再生中の場合はスキップ
+    if (bgmSource) {
+      return;
+    }
+
+    const ctx = audioCtx;
+    bgmSource = ctx.createBufferSource();
+    bgmGain = ctx.createGain();
+
+    bgmSource.buffer = bgmBuffer;
+    bgmSource.loop = true;
+    bgmSource.connect(bgmGain);
+    bgmGain.connect(ctx.destination);
+    bgmGain.gain.setValueAtTime(0.4, ctx.currentTime);
+
+    bgmSource.start(ctx.currentTime);
+  }
+
+  function stopBGM() {
+    if (bgmSource) {
+      try {
+        bgmSource.stop(audioCtx.currentTime);
+      } catch (e) {
+        // already stopped
+      }
+      bgmSource = null;
+      bgmGain = null;
+    }
   }
 
   function playLandSound() {
@@ -1148,6 +1212,10 @@
 
   function initGame() {
     state = 'playing';
+    // BGMを再生
+    if (bgmBuffer) {
+      playBGM();
+    }
     scrollSpeed = BASE_SPEED;
     distance = 0;
     worldOffset = 0;
@@ -1195,6 +1263,9 @@
     initAudioContext();
     if (audioCtx && !jumpBuffer && !jumpBufferLoading) {
       loadJumpSoundBuffer();
+    }
+    if (audioCtx && !bgmBuffer && !bgmBufferLoading) {
+      loadBGMBuffer();
     }
     if (nicknameInput) {
       const name = nicknameInput.value.trim();
@@ -1346,6 +1417,7 @@
         if (state === 'playing') {
           initAudioContext();
           playHitSound();
+          stopBGM();
         }
         state = 'gameover';
         return;
@@ -1383,6 +1455,7 @@
       if (state === 'playing') {
         initAudioContext();
         playHitSound();
+        stopBGM();
       }
       state = 'gameover';
     }
