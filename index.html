@@ -1647,11 +1647,17 @@
       if (sx + block.w < 0) continue;
       const drawW = block.w + 1;
       if (isDaytime) {
-        ctx.fillStyle = '#808080';
+        // グラデーション：上部#3a4a5e（明るめメタリック） → 下部#1a2a3e（暗いメタリック）
+        const gradient = ctx.createLinearGradient(sx, block.y, sx, block.y + block.h);
+        gradient.addColorStop(0, '#3a4a5e');
+        gradient.addColorStop(1, '#1a2a3e');
+        ctx.fillStyle = gradient;
         ctx.fillRect(sx, block.y, drawW, block.h);
-        ctx.shadowColor = '#d891ff';
+
+        // 発光ライン：薄い白 rgba(255, 255, 255, 0.6)
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
         ctx.shadowBlur = 8;
-        ctx.strokeStyle = '#9b5bff';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(sx, block.y + 0.5);
@@ -1660,14 +1666,26 @@
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
       } else {
-        ctx.fillStyle = '#06051b';
+        // グラデーション：上部#1a2a3e（暗いメタリック） → 下部#000005（ほぼ黒）
+        const gradient = ctx.createLinearGradient(sx, block.y, sx, block.y + block.h);
+        gradient.addColorStop(0, '#1a2a3e');
+        gradient.addColorStop(1, '#000005');
+        ctx.fillStyle = gradient;
         ctx.fillRect(sx, block.y, drawW, block.h);
-        ctx.strokeStyle = '#9b5bff';
+
+        // 発光ライン：ネオンマゼンタ #ff00ff
+        ctx.shadowColor = '#ff00ff';
+        ctx.shadowBlur = 12;
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = '#ff00ff';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(sx, block.y + 0.5);
         ctx.lineTo(sx + drawW, block.y + 0.5);
         ctx.stroke();
+        ctx.globalAlpha = 1.0;
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
       }
     }
 
@@ -1844,6 +1862,72 @@
   // ↓ ここにあった git add . を消しました
   requestAnimationFrame(gameLoop);
 })();
+
+// ===== TIME SIMULATION FOR TESTING =====
+// グローバルスコープで時間シミュレーション機能を提供
+window.__timeSimulation = {
+  mockHour: null,
+
+  setNighttime: function() {
+    this.mockHour = 20;
+    console.log('🌙 [TIME SIMULATION] Nighttime activated (hour=20)');
+    console.log('Expected: Dark terrain gradient (#1a2a3e→#000005), Magenta neon glow (#ff00ff)');
+    return 'Nighttime mode activated';
+  },
+
+  setDaytime: function() {
+    this.mockHour = 12;
+    console.log('☀️ [TIME SIMULATION] Daytime activated (hour=12)');
+    console.log('Expected: Bright terrain gradient (#3a4a5e→#1a2a3e), White glow');
+    return 'Daytime mode activated';
+  },
+
+  reset: function() {
+    this.mockHour = null;
+    console.log('⟳ [TIME SIMULATION] Time reset to system');
+    return 'Time reset to system';
+  },
+
+  status: function() {
+    const now = new Date();
+    const sysHour = now.getHours();
+    const isDaytime = sysHour >= 6 && sysHour < 18;
+    const actual = this.mockHour !== null ? this.mockHour : sysHour;
+    const isActualDaytime = actual >= 6 && actual < 18;
+
+    return {
+      systemHour: sysHour,
+      systemMode: isDaytime ? 'Daytime' : 'Nighttime',
+      mockHour: this.mockHour,
+      actualHour: actual,
+      actualMode: isActualDaytime ? 'Daytime' : 'Nighttime',
+      isSimulating: this.mockHour !== null
+    };
+  }
+};
+
+// グローバル関数として公開（コンソールから直接呼び出し可能）
+window.setNighttime = () => window.__timeSimulation.setNighttime();
+window.setDaytime = () => window.__timeSimulation.setDaytime();
+window.resetTime = () => window.__timeSimulation.reset();
+window.timeStatus = () => console.table(window.__timeSimulation.status());
+
+// Date.prototype をオーバーライド
+const originalGetHours = Date.prototype.getHours;
+Date.prototype.getHours = function() {
+  const result = originalGetHours.call(this);
+  if (window.__timeSimulation.mockHour !== null) {
+    return window.__timeSimulation.mockHour;
+  }
+  return result;
+};
+
+console.log('%c=== Purple Biker Nighttime Test ===', 'color: #ff00ff; font-size: 14px; font-weight: bold;');
+console.log('%cTime Simulation Commands:', 'color: #ff00ff; font-weight: bold;');
+console.log('  setNighttime()  - Activate nighttime mode (hour=20)');
+console.log('  setDaytime()    - Activate daytime mode (hour=12)');
+console.log('  resetTime()     - Reset to system time');
+console.log('  timeStatus()    - Show current time status');
   </script>
 </body>
 </html>
